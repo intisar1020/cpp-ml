@@ -68,16 +68,19 @@ int MSNetInference::predict(const std::vector<float>& input_image_data) {
     std::cout << "INFO: Router top-2 predictions: " << pred1 << ", " << pred2 << std::endl;
 
     // 3. Select an expert based on router predictions
-    std::string selected_expert_key;
+    // correction: we will select as much as expert that satisfies both predictions
+    // std::string selected_expert_key;
+    std::vector <std::string> selected_expert_key;
     for (const auto& pair : expert_class_map_) {
         const auto& classes = pair.second;
         // A more robust check is if the expert covers BOTH top predictions.
         bool covers_pred1 = std::find(classes.begin(), classes.end(), pred1) != classes.end();
         bool covers_pred2 = std::find(classes.begin(), classes.end(), pred2) != classes.end();
 
-        if (covers_pred1 && covers_pred2) {
-            selected_expert_key = pair.first;
-            break; // Found the first matching expert
+        if (covers_pred1 ||  covers_pred2) {
+            selected_expert_key.push_back(pair.first);
+            // selected_expert_key = pair.first;
+            // break; // Found the first matching expert
         }
     }
 
@@ -86,9 +89,13 @@ int MSNetInference::predict(const std::vector<float>& input_image_data) {
 
     // 4. If an expert is found, run inference and add its output for averaging
     if (!selected_expert_key.empty()) {
-        std::cout << "INFO: Selected expert '" << selected_expert_key << "' for refinement." << std::endl;
-        std::vector<float> expert_logits = run_inference(expert_sessions_[selected_expert_key].get(), input_tensor);
-        logits_to_average.push_back(expert_logits);
+        for (const auto& expert_key : selected_expert_key) {
+            std::cout << "INFO: Selected expert '" << expert_key << "' for refinement." << std::endl;
+            std::vector<float> expert_logits = run_inference(expert_sessions_[expert_key].get(), input_tensor);
+            logits_to_average.push_back(expert_logits);
+            // create the vector
+            selected_expert_key.clear();
+        }
     } else {
         std::cout << "WARN: No suitable expert found. Using router output only." << std::endl;
     }
