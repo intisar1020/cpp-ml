@@ -1,7 +1,7 @@
+add_library(cpp-ml
+    msnet_inference.cpp
 
-cmake_minimum_required(VERSION 3.10)
-project(TemplateInferenceSim)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+)
 
-add_executable(run_inference main.cpp)
+target_include_directories(cpp-ml PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${ONNXRUNTIME_INCLUDE_DIR})
+target_link_libraries(cpp-ml PUBLIC ${ONNXRUNTIME_LIBRARIES})
